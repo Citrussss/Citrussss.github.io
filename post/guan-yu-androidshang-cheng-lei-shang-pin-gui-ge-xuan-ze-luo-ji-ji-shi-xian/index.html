@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>关于Android：商城类，商品规格选择逻辑及实现 | Arakawa</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://www.arakawa.top//favicon.ico?v=1592482203469">
+<link rel="stylesheet" href="https://www.arakawa.top//styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="    虽然之前接过两个电商项目，但是一个无规格选择，一个虽然有规格选择，但是只有两组（娃直接写死了，23333）
+
+现在终于遇到一个真正的规格选择逻辑需要处理。在此记录一下自己的思路。
+大致方向：我打算用两层RecyclerView做嵌套..." />
+    <meta name="keywords" content="Android" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://www.arakawa.top/">
+        <img src="https://www.arakawa.top//images/avatar.png?v=1592482203469" class="site-logo">
+        <h1 class="site-title">Arakawa</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="https://www.arakawa.top/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="https://www.arakawa.top/archives" class="site-nav">
+            文章
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      欢迎到访，朋友
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://www.arakawa.top//atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">关于Android：商城类，商品规格选择逻辑及实现</h2>
+            <div class="post-date">2020-06-18</div>
+            
+              <div class="feature-container" style="background-image: url('https://www.arakawa.top//post-images/guan-yu-androidshang-cheng-lei-shang-pin-gui-ge-xuan-ze-luo-ji-ji-shi-xian.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <pre><code>    虽然之前接过两个电商项目，但是一个无规格选择，一个虽然有规格选择，但是只有两组（娃直接写死了，23333）
+</code></pre>
+<p>现在终于遇到一个真正的规格选择逻辑需要处理。在此记录一下自己的思路。<br>
+大致方向：我打算用两层RecyclerView做嵌套：<br>
+<img src="https://upload-images.jianshu.io/upload_images/20040136-0e7750183bfd20d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="如上图所示" loading="lazy"></p>
+<p>内层是使用了一个之前做的多选器（鬼知道哪天产品可能要求某个规格能多选。逃）<br>
+然后将能否选择的逻辑委托到外层的适配器中（ps：因为内层之间互不联系，但是逻辑关联）<br>
+好了逻辑好像很清晰了<br>
+<img src="https://upload-images.jianshu.io/upload_images/20040136-20bf85e3ce7ec100.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="i流程图" loading="lazy"></p>
+<p>然后就可以撸起袖子开始干活了。<br>
+先说说内层的适配器：要的逻辑其实不多，关键是单个参数能否被选择的逻辑，第一次我是考虑将能选择的参数作为复数数组处理完再分发进对应的内层适配器。发现这样写有点蛋疼。然后就考虑在刷新视图的时候逐个判断参数能否被选中</p>
+<pre><code class="language-kotlin">    /**
+     * 选择
+     */
+    var onSelect: ((key: String, value: String) -&gt; Unit)? = null
+    private fun onItemClick(baseQuickAdapter: BaseQuickAdapter&lt;*, *&gt;, view: View, position: Int) {
+        if (baseQuickAdapter is ProductSpecificationAdapter) {
+            val adapter = baseQuickAdapter
+            adapter.select(adapter.getItem(position))
+            val key = this.key
+            val value = if (selectList.isEmpty()) {
+                &quot;&quot;
+            } else {
+                selectList[0].title
+            }
+            onSelect?.invoke(key ?: this.toString(), value)
+        }
+    }
+</code></pre>
+<pre><code class="language-kotlin">   /**
+     * 判断该属性是否可选
+     */
+    var computeEnable: ((key: String, value: String) -&gt; Boolean)? = null
+    /**
+     * convert方法代理
+     */
+    var convertProxy: ((helper: BaseViewHolder, item: Item, isSelect: Boolean, isEnable: Boolean) -&gt; Unit)? = null
+
+    override fun convert(helper: BaseViewHolder, item: Item) {
+        val key = this.key
+        val value = item.title
+        val isSelect = selectList.contains(item)
+        val isEnable = key?.let { computeEnable?.invoke(it, value) } ?: false
+        convertProxy?.invoke(helper, item, isSelect, isEnable)
+    }
+</code></pre>
+<p>将内层负责渲染的逻辑也放到了外面去，内层的职责已经被分担的很轻松，只需要分发事件，管理选中状态</p>
+<p>现在看看外层逻辑</p>
+<pre><code class="language-kotlin">    /**
+     * 商品1 ；白 35
+     * 商品2 : 黑 35
+     * 商品3 ：黑 34
+     * 已选{白} 已选{&quot;&quot;}
+     * 解释以下：入参是规格和具体参数，然后在遍历一遍商品的规格，匹配出符合已选参数的商品，注意此      
+     * 时做判断要小心同规格的参数比较，这是无意义而且错误，比如入参是白色，但是已选白色或者黑色， 
+     * 判断是无意义的，此时只需要关心尺码和其他规格是否符合即可。
+     * @return 如果能找到一个包含此规格+已选规格的商品 则返回true
+     */
+    fun computeEnable(key: String, value: String): Boolean {
+        //商品池
+        skus
+            //过滤不包含此规格的商品
+            .filter { it.containsKey(key) &amp;&amp; it.containsValue(value) }
+            .forEach {
+            var valid = true
+            val iterator = selected.iterator()
+            while (iterator.hasNext()) {
+                val next = iterator.next()
+                // 同组不做对比 ; 空值不做对比
+                if (next.key == key || TextUtils.isEmpty(next.value)) continue
+
+                valid = valid &amp;&amp; it.containsKey(next.key) &amp;&amp; it.containsValue(next.value)
+            }
+            if (valid) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * 单个规格的视图切换
+     */
+    fun convertChild(helper: BaseViewHolder, item: BaseSelectAdapter.Item, isSelect: Boolean, isEnable: Boolean) {
+        if (convertProxy == null) {
+            LogUtils.eTag(&quot;init&quot;, &quot;请给方法对象：convertProxy赋值！&quot;)
+        }
+        convertProxy?.invoke(helper, item, isSelect, isEnable)
+    }
+
+    /**
+     * 选中一个规格
+     */
+    fun onSelect(key: String, value: String) {
+        selected[key] = value
+        lastSelectKey = key
+        lastSelectValue = value
+        notifyDataSetChanged()
+    }
+</code></pre>
+<p>最关键的方法是计算可选的逻辑：算法可能不是最优：如果有大佬指点一下，万万感谢！</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://www.arakawa.top/tag/android/" class="tag">
+                    Android
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://www.arakawa.top/post/ji-lu-yi-ci-xue-xi-jiao-zi-bo-fang-qi-qie-huan-quan-ping-bo-fang-yuan-li/">
+                  <h3 class="post-title">
+                    记录一次 学习饺子播放器切换全屏播放原理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>
