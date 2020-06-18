@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://www.arakawa.top/</id>
     <title>Arakawa</title>
-    <updated>2020-06-18T12:12:02.553Z</updated>
+    <updated>2020-06-18T12:14:10.537Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://www.arakawa.top/"/>
     <link rel="self" href="https://www.arakawa.top/atom.xml"/>
@@ -16,10 +16,8 @@
         <link href="https://www.arakawa.top/post/guan-yu-androidshang-cheng-lei-shang-pin-gui-ge-xuan-ze-luo-ji-ji-shi-xian/">
         </link>
         <updated>2020-06-18T12:07:57.000Z</updated>
-        <content type="html"><![CDATA[<pre><code>    虽然之前接过两个电商项目，但是一个无规格选择，一个虽然有规格选择，但是只有两组（娃直接写死了，23333）
-</code></pre>
-<p>现在终于遇到一个真正的规格选择逻辑需要处理。在此记录一下自己的思路。<br>
-大致方向：我打算用两层RecyclerView做嵌套：<br>
+        <content type="html"><![CDATA[<p>虽然之前接过两个电商项目，但是一个无规格选择，一个虽然有规格选择，但是只有两组（娃直接写死了，23333）<br>
+现在终于遇到一个真正的规格选择逻辑需要处理。在此记录一下自己的思路。大致方向：我打算用两层RecyclerView做嵌套：<br>
 <img src="https://upload-images.jianshu.io/upload_images/20040136-0e7750183bfd20d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="如上图所示" loading="lazy"></p>
 <p>内层是使用了一个之前做的多选器（鬼知道哪天产品可能要求某个规格能多选。逃）<br>
 然后将能否选择的逻辑委托到外层的适配器中（ps：因为内层之间互不联系，但是逻辑关联）<br>
